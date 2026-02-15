@@ -5,9 +5,22 @@ const cors = require('cors');   // 👈 AÑADIR ESTO
 const app = express();
 
 // 🔥 CORS — ESTO ES LO QUE FALTABA
+const cors = require("cors");
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "*"
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true); // Postman / server-to-server
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    return cb(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
 }));
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
@@ -44,6 +57,10 @@ app.use("/api/caja", cajaRoutes);
 app.use('/api/pedidos', pedidosRoutes);
 app.use('/api/platos', platosRoutes);
 app.use('/api/mesas', mesasRoutes);
+
+app.get("/", (req, res) => {
+  res.json({ ok: true, msg: "Backend Restaurante System corriendo ✅" });
+});
 
 app.listen(3000, () => {
   console.log('Servidor corriendo en http://localhost:3000');
