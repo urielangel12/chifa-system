@@ -1,0 +1,13 @@
+node_modules
+.env
+
+# Prisma
+/generated
+/src/generated/prisma
+
+# Archivos generados / reportes
+exports
+
+# Logs
+*.log
+logs

@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Mesa {
+  id        Int      @id @default(autoincrement())
+  numero    Int
+  estado    String
+  createdAt DateTime @default(now())
+
+  pedidos Pedido[]
+}
+
+model Plato {
+  id        Int             @id @default(autoincrement())
+  nombre    String
+  precio    Float
+  activo    Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  categoria String 
+  subcategoria String
+  detalles  PedidoDetalle[]
+}
+
+model Pedido {
+  id        Int      @id @default(autoincrement())
+  mesaId    Int
+  usuarioId Int?        // 👈 OPCIONAL
+  jornadaId Int?        // 👈 OPCIONAL
+  total     Float    @default(0)
+  estado    String   // ABIERTO | PAGADO | CANCELADO  
+  createdAt DateTime @default(now())
+  
+
+  mesa     Mesa      @relation(fields: [mesaId], references: [id])
+  usuario  Usuario?  @relation(fields: [usuarioId], references: [id])
+  jornada  Jornada?  @relation(fields: [jornadaId], references: [id])
+  detalles PedidoDetalle[]
+  pagos Pago[]
+  
+}
+model Pago {
+  id          Int      @id @default(autoincrement())
+  pedido      Pedido   @relation(fields: [pedidoId], references: [id])
+  pedidoId    Int      
+  monto       Float
+  metodoPago  String?
+  fechaCierre DateTime?
+  createdAt   DateTime @default(now())
+
+ 
+}
+
+
+  
+model PedidoDetalle {
+  id       Int   @id @default(autoincrement())
+  pedidoId Int
+  platoId  Int
+  cantidad Int
+  cantidadPagada Int @default(0)
+  precio   Float // 👈 ESTE CAMPO EXISTE
+  subtotal Float
+
+  pedido Pedido @relation(fields: [pedidoId], references: [id])
+  plato  Plato  @relation(fields: [platoId], references: [id])
+}
+
+model Caja {
+  id           Int              @id @default(autoincrement())
+  fecha        DateTime         @default(now())
+  montoInicial Float
+  montoFinal   Float?
+  estado       String // ABIERTA | CERRADA
+  movimientos  MovimientoCaja[]
+}
+
+model MovimientoCaja {
+  id        Int      @id @default(autoincrement())
+  cajaId    Int
+  tipo      String // INGRESO | EGRESO
+  concepto  String
+  monto     Float
+  createdAt DateTime @default(now())
+
+  caja Caja @relation(fields: [cajaId], references: [id])
+}
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  email     String   @unique
+  password  String
+  rol       String // ADMIN | MOZO | CAJA
+  createdAt DateTime @default(now())
+
+  pedidos Pedido[] //Esta linea es clave
+}
+
+model Jornada {
+  id          Int      @id @default(autoincrement())
+  fecha       DateTime
+  estado      Boolean  @default(true) // true = abierta
+  totalVentas Float    @default(0)
+  cierre      DateTime?   
+  createdAt   DateTime @default(now())
+  observaciones String?
+
+  pedidos     Pedido[]
+}
