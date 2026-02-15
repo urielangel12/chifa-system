@@ -1,12 +1,12 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');   // 👈 AÑADIR ESTO
+require("dotenv").config();
+process.env.TZ = "America/Lima";
+
+const express = require("express");
+const cors = require("cors");
 
 const app = express();
 
-// 🔥 CORS — ESTO ES LO QUE FALTABA
-const cors = require("cors");
-
+// ✅ CORS: local + prod (Vercel)
 const allowedOrigins = [
   "http://localhost:5173",
   process.env.FRONTEND_URL,
@@ -21,47 +21,36 @@ app.use(cors({
   credentials: true,
 }));
 
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
-
-
-// 🔴 ESTA LÍNEA ES OBLIGATORIA
 app.use(express.json());
 
-const pedidosRoutes = require('./routes/pedidos');
-const platosRoutes = require('./routes/platos');
-const mesasRoutes = require('./routes/mesas');
+// ✅ Ruta raíz (para que "/" no asuste)
+app.get("/", (req, res) => {
+  res.json({ ok: true, msg: "Backend Restaurante System corriendo ✅" });
+});
+
+// Routes
+const pedidosRoutes = require("./routes/pedidos");
+const platosRoutes = require("./routes/platos");
+const mesasRoutes = require("./routes/mesas");
 const cajaRoutes = require("./routes/caja");
 const authRoutes = require("./routes/auth");
 const jornadaRoutes = require("./routes/jornada");
 const reporteDiario = require("./routes/reporteDiario");
 const reporteMensual = require("./routes/reporteMensual");
-const reporteSemestral = require("./routes/reporteSemestral")
+const reporteSemestral = require("./routes/reporteSemestral");
 
-process.env.TZ = "America/Lima";
-
-require('dotenv').config();
-
-
-
-app.use("/api/reportes", reporteSemestral)
+app.use("/api/reportes", reporteSemestral);
 app.use("/api/reportes", reporteMensual);
 app.use("/api/reportes", reporteDiario);
 app.use("/api/jornada", jornadaRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/caja", cajaRoutes);
 
-app.use('/api/pedidos', pedidosRoutes);
-app.use('/api/platos', platosRoutes);
-app.use('/api/mesas', mesasRoutes);
+app.use("/api/pedidos", pedidosRoutes);
+app.use("/api/platos", platosRoutes);
+app.use("/api/mesas", mesasRoutes);
 
-app.get("/", (req, res) => {
-  res.json({ ok: true, msg: "Backend Restaurante System corriendo ✅" });
-});
-
-app.listen(3000, () => {
-  console.log('Servidor corriendo en http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
