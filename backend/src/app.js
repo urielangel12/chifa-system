@@ -6,8 +6,14 @@ const app = express();
 
 // 🔥 CORS — ESTO ES LO QUE FALTABA
 app.use(cors({
-  origin: 'http://localhost:5173'
+  origin: process.env.FRONTEND_URL || "*"
 }));
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});
+
 
 // 🔴 ESTA LÍNEA ES OBLIGATORIA
 app.use(express.json());
