@@ -1,13 +1,25 @@
-node_modules
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env
 .env
+.env.*
+
+# Build
+dist/
+build/
 
 # Prisma
-/generated
-/src/generated/prisma
+backend/node_modules/.prisma/
+backend/prisma/dev.db
 
-# Archivos generados / reportes
-exports
+# OS
+.DS_Store
+Thumbs.db
 
-# Logs
-*.log
-logs
+# Vercel/Render
+.vercel/

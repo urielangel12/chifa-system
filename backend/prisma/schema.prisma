@@ -5,12 +5,11 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 model Mesa {
   id        Int      @id @default(autoincrement())
-  numero    Int
+  numero    Int      @unique // ✅ evita duplicadas
   estado    String
   createdAt DateTime @default(now())
 
@@ -18,58 +17,66 @@ model Mesa {
 }
 
 model Plato {
-  id        Int             @id @default(autoincrement())
-  nombre    String
-  precio    Float
-  activo    Boolean         @default(true)
-  createdAt DateTime        @default(now())
-  categoria String 
-  subcategoria String
-  detalles  PedidoDetalle[]
+  id           Int             @id @default(autoincrement())
+  nombre       String
+  precio       Float
+  activo       Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  categoria    String
+  subcategoria String?
+  detalles     PedidoDetalle[]
 }
 
 model Pedido {
   id        Int      @id @default(autoincrement())
   mesaId    Int
-  usuarioId Int?        // 👈 OPCIONAL
-  jornadaId Int?        // 👈 OPCIONAL
+  usuarioId Int?
+  jornadaId Int?
   total     Float    @default(0)
-  estado    String   // ABIERTO | PAGADO | CANCELADO  
+  estado    String
   createdAt DateTime @default(now())
-  
 
-  mesa     Mesa      @relation(fields: [mesaId], references: [id])
-  usuario  Usuario?  @relation(fields: [usuarioId], references: [id])
-  jornada  Jornada?  @relation(fields: [jornadaId], references: [id])
+  mesa     Mesa            @relation(fields: [mesaId], references: [id])
+  usuario  Usuario?        @relation(fields: [usuarioId], references: [id])
+  jornada  Jornada?        @relation(fields: [jornadaId], references: [id])
   detalles PedidoDetalle[]
-  pagos Pago[]
-  
+  pagos    Pago[]
+
+  @@index([estado]) // ✅ filtrar ABIERTO/PAGADO rápido
+  @@index([mesaId]) // ✅ /pedidos/mesa/:id
+  @@index([jornadaId]) // ✅ reportes por jornada
+  @@index([estado, mesaId]) // ✅ tu endpoint /mesas (ABIERTO por mesa)
+  @@index([estado, jornadaId]) // ✅ reportes (PAGADO por jornada)
+  @@index([createdAt]) // ✅ ordenamientos / cortes por fecha
 }
+
 model Pago {
-  id          Int      @id @default(autoincrement())
-  pedido      Pedido   @relation(fields: [pedidoId], references: [id])
-  pedidoId    Int      
+  id          Int       @id @default(autoincrement())
+  pedido      Pedido    @relation(fields: [pedidoId], references: [id])
+  pedidoId    Int
   monto       Float
   metodoPago  String?
   fechaCierre DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
- 
+  @@index([pedidoId])
+  @@index([metodoPago])
+  @@index([createdAt])
 }
 
-
-  
 model PedidoDetalle {
-  id       Int   @id @default(autoincrement())
-  pedidoId Int
-  platoId  Int
-  cantidad Int
-  cantidadPagada Int @default(0)
-  precio   Float // 👈 ESTE CAMPO EXISTE
-  subtotal Float
+  id             Int   @id @default(autoincrement())
+  pedidoId       Int
+  platoId        Int
+  cantidad       Int
+  cantidadPagada Int   @default(0)
+  precio         Float
+  subtotal       Float
 
   pedido Pedido @relation(fields: [pedidoId], references: [id])
   plato  Plato  @relation(fields: [platoId], references: [id])
+
+  @@index([pedidoId, platoId])
 }
 
 model Caja {
@@ -90,6 +97,8 @@ model MovimientoCaja {
   createdAt DateTime @default(now())
 
   caja Caja @relation(fields: [cajaId], references: [id])
+
+  @@index([cajaId])
 }
 
 model Usuario {
@@ -104,13 +113,17 @@ model Usuario {
 }
 
 model Jornada {
-  id          Int      @id @default(autoincrement())
-  fecha       DateTime
-  estado      Boolean  @default(true) // true = abierta
-  totalVentas Float    @default(0)
-  cierre      DateTime?   
-  createdAt   DateTime @default(now())
+  id            Int       @id @default(autoincrement())
+  fecha         DateTime
+  estado        Boolean   @default(true)
+  totalVentas   Float     @default(0)
+  cierre        DateTime?
+  createdAt     DateTime  @default(now())
   observaciones String?
 
-  pedidos     Pedido[]
+  pedidos Pedido[]
+
+  @@index([estado])
+  @@index([cierre])
+  @@index([fecha])
 }

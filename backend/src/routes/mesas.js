@@ -2,98 +2,96 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../prisma");
 
-/* ➕ CREAR MESA */
+/* ➕ CREAR MESA (ÚNICO) */
 router.post("/", async (req, res) => {
-  const { numero } = req.body;
+  try {
+    const numero = Number(req.body.numero);
 
-  if (!numero) {
-    return res.status(400).json({ error: "Número de mesa requerido" });
-  }
-
-  const existe = await prisma.mesa.findFirst({
-    where: { numero }
-  });
-
-  if (existe) {
-    return res.status(400).json({ error: "Mesa ya existe" });
-  }
-
-  const mesa = await prisma.mesa.create({
-    data: {
-      numero,
-      estado: "LIBRE"
+    if (!numero || Number.isNaN(numero)) {
+      return res.status(400).json({ error: "Número de mesa requerido" });
     }
-  });
 
-  res.json(mesa);
+    const existe = await prisma.mesa.findFirst({
+      where: { numero },
+      select: { id: true }
+    });
+
+    if (existe) {
+      return res.status(400).json({ error: "Mesa ya existe" });
+    }
+
+    const mesa = await prisma.mesa.create({
+      data: { numero, estado: "LIBRE" },
+      select: { id: true, numero: true, estado: true }
+    });
+
+    res.json(mesa);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Error creando mesa" });
+  }
 });
 
-/* 📋 LISTAR MESAS */
+/* 📋 LISTAR MESAS (OPTIMIZADO) */
 router.get("/", async (req, res) => {
-  const mesas = await prisma.mesa.findMany({
-    orderBy: { numero: "asc" }
-  });
+  try {
+    const mesas = await prisma.mesa.findMany({
+      select: { id: true, numero: true }, // ✅ solo lo necesario
+      orderBy: { numero: "asc" }
+    });
 
-  const pedidosAbiertos = await prisma.pedido.findMany({
-    where: { estado: "ABIERTO" },
-    select: { mesaId: true }
-  });
+    // ✅ solo mesaId, sin traer todo el pedido
+    const pedidosAbiertos = await prisma.pedido.findMany({
+      where: { estado: "ABIERTO" },
+      distinct: ["mesaId"],
+      select: { mesaId: true }
+    });
 
-  const setOcupadas = new Set(pedidosAbiertos.map(p => p.mesaId));
+    const setOcupadas = new Set(pedidosAbiertos.map(p => p.mesaId));
 
-  const resultado = mesas.map(m => ({
-    ...m,
-    estado: setOcupadas.has(m.id) ? "OCUPADA" : "LIBRE"
-  }));
+    const resultado = mesas.map(m => ({
+      id: m.id,
+      numero: m.numero,
+      estado: setOcupadas.has(m.id) ? "OCUPADA" : "LIBRE"
+    }));
 
-  res.json(resultado);
-});
-
-
-/* 📊 DASHBOARD DE MESAS */
-router.get("/dashboard", async (req, res) => {
-  const mesas = await prisma.mesa.findMany({
-    include: {
-      pedidos: {
-        where: { estado: "ABIERTO" },
-        select: {
-          id: true,
-          total: true,
-          createdAt: true
-        }
-      }
-    }
-  });
-
-  const resultado = mesas.map(mesa => ({
-    id: mesa.id,
-    numero: mesa.numero,
-    estado: mesa.estado,
-    pedido: mesa.pedidos.length > 0 ? mesa.pedidos[0] : null
-  }));
-
-  res.json(resultado);
-});
-/* ➕ CREAR MESA */
-router.post("/", async (req, res) => {
-  const { numero } = req.body;
-
-  const mesaExistente = await prisma.mesa.findFirst({
-    where: { numero }
-  });
-
-  if (mesaExistente) {
-    return res.status(400).json({ error: "La mesa ya existe" });
+    // Para dashboards en tiempo real, mejor no cachear
+    res.setHeader("Cache-Control", "no-store");
+    res.json(resultado);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Error listando mesas" });
   }
+});
 
-  const mesa = await prisma.mesa.create({
-    data: {
-      numero,
-      estado: "LIBRE"
-    }
-  });
+/* 📊 DASHBOARD DE MESAS (si lo usas, también lo optimizamos) */
+router.get("/dashboard", async (req, res) => {
+  try {
+    const mesas = await prisma.mesa.findMany({
+      select: {
+        id: true,
+        numero: true,
+        pedidos: {
+          where: { estado: "ABIERTO" },
+          select: { id: true, total: true, createdAt: true }
+        }
+      },
+      orderBy: { numero: "asc" }
+    });
 
-  res.json(mesa);
+    const resultado = mesas.map(m => ({
+      id: m.id,
+      numero: m.numero,
+      estado: m.pedidos.length > 0 ? "OCUPADA" : "LIBRE",
+      pedido: m.pedidos[0] || null
+    }));
+
+    res.setHeader("Cache-Control", "no-store");
+    res.json(resultado);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Error dashboard mesas" });
+  }
 });
 
 module.exports = router;

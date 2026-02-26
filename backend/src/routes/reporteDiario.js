@@ -61,39 +61,6 @@ if (fecha) {
     return res.status(400).json({ error: "No hay jornada cerrada" })
   }
 
-  // 2️⃣ Totales por categoría
-const [helados] = await prisma.$queryRaw`
-  SELECT COALESCE(SUM(pd.subtotal),0) AS total
-  FROM "PedidoDetalle" pd
-  JOIN "Pedido" p ON p.id = pd."pedidoId"
-  JOIN "Plato" pl ON pl.id = pd."platoId"
-  WHERE p."jornadaId" = ${jornada.id}
-    AND p.estado = 'PAGADO'
-    AND UPPER(pl.categoria) LIKE '%HELAD%'
-`;
-
-const [cerveza] = await prisma.$queryRaw`
-  SELECT COALESCE(SUM(pd.subtotal),0) AS total
-  FROM "PedidoDetalle" pd
-  JOIN "Pedido" p ON p.id = pd."pedidoId"
-  JOIN "Plato" pl ON pl.id = pd."platoId"
-  WHERE p."jornadaId" = ${jornada.id}
-    AND p.estado = 'PAGADO'
-    AND UPPER(pl.subcategoria) LIKE '%CERVEZA%'
-`;
-
-const [gaseosa] = await prisma.$queryRaw`
-  SELECT COALESCE(SUM(pd.subtotal),0) AS total
-  FROM "PedidoDetalle" pd
-  JOIN "Pedido" p ON p.id = pd."pedidoId"
-  JOIN "Plato" pl ON pl.id = pd."platoId"
-  WHERE p."jornadaId" = ${jornada.id}
-    AND p.estado = 'PAGADO'
-    AND UPPER(pl.subcategoria) LIKE '%GASEOSA%'
-`;
-
-
-
 
   
    const tipoDia = obtenerTipoDia(jornada.fecha)
@@ -195,7 +162,7 @@ pagos.forEach(p => {
 
   // 🏷️ TÍTULO
   sheet.mergeCells("A1:E1")
-  sheet.getCell("A1").value = "LA GRUTA - COCHARCAS"
+  sheet.getCell("A1").value = "VELAMI - SNAILIS"
   sheet.getCell("A1").font = { size: 16, bold: true }
   sheet.getCell("A1").alignment = { horizontal: "center" }
 
@@ -223,13 +190,14 @@ sheet.getCell("A2").value = `FECHA: ${fechaPE}`;
     "TOTAL MESA"
   ]).font = { bold: true }
 
-  // 📊 FILAS
- 
   let totalVentas = 0
-  let totalEfectivo = 0
-  let totalYape = 0
-  let totalVeces = 0
+let totalEfectivo = 0
+let totalYape = 0
+let totalVeces = 0
 
+  // 📊 FILAS
+
+ 
  Object.values(mesas).forEach(m => {
   const totalMesa = m.efectivo + m.yape
 
@@ -279,12 +247,9 @@ resumenTitle.eachCell(cell => {
 })
 
 // filas resumen
-const rHelados = sheet.addRow(["TOTAL HELADOS", helados.total])
-const rCerveza = sheet.addRow(["TOTAL CERVEZA", cerveza.total])
-const rGaseosa = sheet.addRow(["TOTAL GASEOSA", gaseosa.total])
 const rVentas  = sheet.addRow(["TOTAL VENTAS", totalVentas])
 
-;[rHelados, rCerveza, rGaseosa, rVentas].forEach(r => {
+;[rVentas].forEach(r => {
   r.font = { bold: true }
   r.getCell(2).numFmt = '"S/ " #,##0.00'
   bordes(r)
@@ -296,7 +261,7 @@ bordes(rCosto)
 
 const rGanancia = sheet.addRow([
   "GANANCIA REAL",
-  `=B${rVentas.number}-B${rCosto.number}`
+  `=($B$${rVentas.number}-$B$${rCosto.number})`
 ])
 
 rGanancia.font = { bold: true }

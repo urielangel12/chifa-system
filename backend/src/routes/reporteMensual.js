@@ -41,7 +41,7 @@ const fin = new Date(`${finAnio}-${String(finMes).padStart(2, "0")}-01T05:00:00.
 
   // 🔷 TÍTULO
   sheet.mergeCells("A1:L1")
-  sheet.getCell("A1").value = "REPORTE MENSUAL - LA GRUTA COCHARCAS"
+  sheet.getCell("A1").value = "REPORTE MENSUAL - VELAMI SNAILIS"
   sheet.getCell("A1").font = { bold: true, size: 16, color: { argb: "FFFFFF" } }
   sheet.getCell("A1").alignment = { horizontal: "center" }
   sheet.getCell("A1").fill = {
@@ -77,11 +77,8 @@ const fin = new Date(`${finAnio}-${String(finMes).padStart(2, "0")}-01T05:00:00.
   })
 
   const resumen = []
-let totalHelados = 0
-let totalCerveza = 0
-let totalGaseosa = 0
-let totalPlatos = 0
-let totalInsumos = 0
+let totalVentasMes = 0
+let totalInsumos  = 0
 
   for (const j of jornadas) {
   const pedidos = await prisma.pedido.findMany({
@@ -104,43 +101,9 @@ pedidos.forEach(p => {
   mesas[idx] = `S/ ${p.total.toFixed(2)}`
   totalDia += p.total
 
-  // 🔥 TODAS LAS VENTAS SE SACAN DE LOS DETALLES
-p.detalles.forEach(d => {
-  const categoria = d.plato.categoria?.toUpperCase() || ""
-  const subcategoria = d.plato.subcategoria?.toUpperCase() || ""
-  const subtotal = d.subtotal
-
-  // 🍦 HELADOS
-  if (categoria.includes("HELADO")) {
-    totalHelados += subtotal
-  }
-
-  // 🍽️ PLATOS (TODO LO QUE SEA COMIDA)
-  else if (
-    categoria.includes("PLATO") ||
-    categoria.includes("PLATOS") ||
-    categoria.includes("COMIDA") ||
-    categoria.includes("MENU") ||
-    categoria.includes("ALMUERZO")
-  ) {
-    totalPlatos += subtotal
-  }
-
-  // 🍺 CERVEZA
-  else if (subcategoria.includes("CERVEZA")) {
-    totalCerveza += subtotal
-  }
-
-  // 🥤 GASEOSA
-  else if (subcategoria.includes("GASEOSA")) {
-    totalGaseosa += subtotal
-  }
 })
 
-
-})
-
-
+totalVentasMes += totalDia
 
 
     const row = sheet.addRow([
@@ -246,20 +209,11 @@ totalesTitle.getCell(1).fill = {
   fgColor: { argb: "548235" }
 }
 sheet.getRow(totalesTitle.number).height = 26
-const totalVentasMes =
-  totalHelados +
-  totalCerveza +
-  totalGaseosa +
-  totalPlatos
-
 const gananciaMes = totalVentasMes - totalInsumos
 
 const totalesMensuales = [
-  ["Total venta helados", totalHelados],
-  ["Total venta cerveza", totalCerveza],
-  ["Total venta gaseosa", totalGaseosa],
-  ["Total venta platos", totalPlatos],
-  ["Total venta insumos", totalInsumos],
+  ["TOTAL VENTAS DEL MES", totalVentasMes],
+  ["TOTAL INSUMOS", totalInsumos],
   ["GANANCIA TOTAL DEL MES", gananciaMes],
 ]
 
