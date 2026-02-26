@@ -9,7 +9,7 @@ const app = express();
 // ✅ CORS: local + prod (Vercel)
 const allowedOrigins = [
   "http://localhost:5173",
-  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL, // https://chifa-system.vercel.app
 ].filter(Boolean);
 
 app.use(cors({
@@ -21,9 +21,12 @@ app.use(cors({
   credentials: true,
 }));
 
+// 🔥 ESTA LÍNEA ES LA QUE FALTABA
+app.options("*", cors());
+
 app.use(express.json());
 
-// ✅ Ruta raíz (para que "/" no asuste)
+// ✅ Ruta raíz
 app.get("/", (req, res) => {
   res.json({ ok: true, msg: "Backend Restaurante System corriendo ✅" });
 });
@@ -45,12 +48,11 @@ app.use("/reportes", reporteDiario);
 app.use("/jornada", jornadaRoutes);
 app.use("/auth", authRoutes);
 app.use("/caja", cajaRoutes);
-
 app.use("/pedidos", pedidosRoutes);
 app.use("/platos", platosRoutes);
 app.use("/mesas", mesasRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en puerto ${PORT}`);
 });
