@@ -6,23 +6,26 @@ const cors = require("cors");
 
 const app = express();
 
-// ✅ CORS: local + prod (Vercel)
 const allowedOrigins = [
   "http://localhost:5173",
   process.env.FRONTEND_URL, // https://chifa-system.vercel.app
 ].filter(Boolean);
 
-app.use(cors({
+const corsOptions = {
   origin: (origin, cb) => {
     if (!origin) return cb(null, true); // Postman / server-to-server
     if (allowedOrigins.includes(origin)) return cb(null, true);
-    return cb(new Error("Not allowed by CORS"));
+
+    // ✅ permitir previews de Vercel (opcional pero recomendado)
+    if (/\.vercel\.app$/.test(origin)) return cb(null, true);
+
+    return cb(null, false); // no revienta el server
   },
   credentials: true,
-}));
+};
 
-// 🔥 ESTA LÍNEA ES LA QUE FALTABA
-app.options("*", cors());
+app.use(cors(corsOptions));
+app.options("/*", cors(corsOptions)); // ✅ Express 5 compatible
 
 app.use(express.json());
 
