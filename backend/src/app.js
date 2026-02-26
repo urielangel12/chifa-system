@@ -39,16 +39,16 @@ const reporteDiario = require("./routes/reporteDiario");
 const reporteMensual = require("./routes/reporteMensual");
 const reporteSemestral = require("./routes/reporteSemestral");
 
-app.use("/api/reportes", reporteSemestral);
-app.use("/api/reportes", reporteMensual);
-app.use("/api/reportes", reporteDiario);
-app.use("/api/jornada", jornadaRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/caja", cajaRoutes);
+app.use("/reportes", reporteSemestral);
+app.use("/reportes", reporteMensual);
+app.use("/reportes", reporteDiario);
+app.use("/jornada", jornadaRoutes);
+app.use("/auth", authRoutes);
+app.use("/caja", cajaRoutes);
 
-app.use("/api/pedidos", pedidosRoutes);
-app.use("/api/platos", platosRoutes);
-app.use("/api/mesas", mesasRoutes);
+app.use("/pedidos", pedidosRoutes);
+app.use("/platos", platosRoutes);
+app.use("/mesas", mesasRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
